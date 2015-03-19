@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <title>API Reference</title>
+    <title>Yellow API Reference</title>
 
     <link href="stylesheets/screen.css" rel="stylesheet" type="text/css" media="screen" />
     <link href="stylesheets/print.css" rel="stylesheet" type="text/css" media="print" />
@@ -13,7 +13,7 @@
 
       <script>
         $(function() {
-          setupLanguages(["shell","ruby","python"]);
+          setupLanguages(["shell","python","javascript"]);
         });
       </script>
   </head>
@@ -28,9 +28,9 @@
     <div class="tocify-wrapper">
       <img src="images/logo.png" />
         <div class="lang-selector">
-              <a href="#" data-language-name="shell">shell</a>
-              <a href="#" data-language-name="ruby">ruby</a>
-              <a href="#" data-language-name="python">python</a>
+              <a href="#" data-language-name="shell">curl</a>
+              <a href="#" data-language-name="python">Python</a>
+              <a href="#" data-language-name="javascript">Node/JS</a>
         </div>
         <div class="search">
           <input type="text" class="search" id="input-search" placeholder="Search">
@@ -39,217 +39,445 @@
       <div id="toc">
       </div>
         <ul class="toc-footer">
-            <li><a href='#'>Sign Up for a Developer Key</a></li>
-            <li><a href='http://github.com/tripit/slate'>Documentation Powered by Slate</a></li>
+            <li><a href='#'>Sign Up for an API Key/Secret</a></li>
         </ul>
     </div>
     <div class="page-wrapper">
       <div class="dark-box"></div>
       <div class="content">
-        <h1 id='introduction'>Introduction</h1>
-<p>Welcome to the Kittn API! You can use our API to access Kittn API endpoints, which can get information on various cats, kittens, and breeds in our database.</p>
+        <h1 id="introduction">Introduction</h1>
 
-<p>We have language bindings in Shell, Ruby, and Python! You can view code examples in the dark area to the right, and you can switch the programming language of the examples with the tabs in the top right.</p>
+<p>Welcome to Yellow! We&rsquo;re here to take the pain out of integrating bitcoin into your web &amp; mobile applications. This documentation will give you all the information you need to get set up with whatever language you&rsquo;re comfortable with, or even better, through raw HTTP.</p>
 
-<p>This example API documentation page was created with <a href="http://github.com/tripit/slate">Slate</a>. Feel free to edit it and use it as a base for your own API&rsquo;s documentation.</p>
-<h1 id='authentication'>Authentication</h1>
-<blockquote>
-<p>To authorize, use this code:</p>
-</blockquote>
-<pre><code class="highlight ruby"><span class="nb">require</span> <span class="s1">'kittn'</span>
+<p>If you ever need any help, feel free to contact us at support@yellowpay.co</p>
 
-<span class="n">api</span> <span class="o">=</span> <span class="no">Kittn</span><span class="o">::</span><span class="no">APIClient</span><span class="p">.</span><span class="nf">authorize!</span><span class="p">(</span><span class="s1">'meowmeowmeow'</span><span class="p">)</span>
+<h2 id="bitcoin-payments-in-a-nutshell">Bitcoin Payments in a Nutshell</h2>
+
+<p>There are 5 steps in a Bitcoin payment:</p>
+
+<ol>
+<li>The <strong>customer</strong> completes their shopping cart on the <strong>merchant</strong>’s site and proceeds to check out</li>
+<li><strong>Yellow</strong> generates a unique, one-time-use Bitcoin address to accept payment which is then displayed on the <strong>merchant</strong>’s site. The address is displayed both in text and QR-code form.</li>
+<li><strong>The customer</strong> sends payment (in Bitcoin) to the Bitcoin address, using either:
+
+<ul>
+<li>Their smartphone Bitcoin wallet to scan the QR-code, or</li>
+<li>A web based Bitcoin wallet (e.g., blockchain.info)</li>
+</ul></li>
+<li>Bitcon payment is received and <strong>the customer</strong> is redirected to an order confirmation page on <strong>the merchant’s</strong> site</li>
+<li><strong>Yellow</strong> converts the received Bitcoin payment into a national currency (like AED) and transfers it to <strong>the merchant’s</strong> bank account</li>
+</ol>
+
+<p>For an overview of how control flows between customer, merchant, and Yellow, please see this <a href="https://drive.google.com/a/yellowpay.co/file/d/0B7kRiTGQ3IwNdFBDcXlqNkMwWU0/view">flowchart</a>.</p>
+
+<p>For more information on the Bitcoin technology, please see <a href="http://shubitcoin.com">shubitcoin.com</a> - which will be home to a number of great Bitcoin resources created especially for the Middle East.</p>
+
+<h2 id="adding-bitcoin-to-a-shopping-cart">Adding Bitcoin to a Shopping Cart</h2>
+
+<p>There are three ways to integrate Yellow Bitcoin payments with a shopping cart:</p>
+
+<ol>
+<li>By using a plugin to one of our supported ecommerce platforms like Magento</li>
+<li>By using one of our SDKs (PHP, Python, Ruby &amp; Node.js)</li>
+<li>By accessing our API directly from the merchant site</li>
+</ol>
+
+<h1 id="authentication">Authentication</h1>
+
+<p>All API requests must be authenticated with the merchant’s private key. To secure communication between merchant server and Yellow server we use a form of <a href="http://en.wikipedia.org/wiki/Hash-based_message_authentication_code">HMAC authentication</a>.</p>
+
+<p>When submitting a request to Yellow 3 additional header elements are needed:</p>
+
+<ul>
+<li><strong>API-Key:</strong> your public API key, you can get this from your merchant dashboard</li>
+<li><strong>API-Nonce:</strong> an ever-increasing number that is different for each request (e.g., current UNIX time in milliseconds)</li>
+<li><strong>API-Sign:</strong> an HMAC hash (using SHA256) signed with your API secret and converted to hexadecimal. The message to be hashed and signed is the concatenation of the nonce, fully-qualified request URL, and the json encoded POST data (for GET requests, the “POST data” is an empty string).</li>
+</ul>
+
+<p>This approach allows us to authenticate the request as coming from the merchant, prevents anyone else from modifying or replaying the request, and ensures the secret key is never exposed (even in a Heartbleed-type scenario where the SSL layer itself is compromised).</p>
+
+<p>If you need a more concrete example in your favorite language, feel free to check out the source code of one of our SDKs. However, if you don&rsquo;t wanna worry about authentication, you could just use one of our SDKs directly.</p>
+
+<h1 id="the-yellow-api">The Yellow API</h1>
+
+<p>There are two steps in integrating the Yellow API (corresponding to steps #2 and #4 in the Bitcoin payments walkthrough above)</p>
+
+<ol>
+<li><strong>Create an invoice:</strong> the merchant provides a national currency price (e.g., 100 AED) and receives an invoice. The invoice bundles together a unique, one-time-use Bitcoin address and a Bitcoin price equivalent to the provided national currency price.</li>
+<li><strong>Await and respond to payment notifications:</strong> There are two ways a merchant can listen to payment status  notifications from Yellow: either through a JavaScript “postMessage” notification, or through registering an “Instant Payment Notification” (IPN) callback URL when creating the invoice.</li>
+</ol>
+
+<h2 id="server-root">Server Root</h2>
+
+<p>Direct all your API calls to our production server at:</p>
+
+<aside class="notice">
+Production: https://api.yellowpay.co
+</aside>
+
+<h2 id="creating-invoices">Creating Invoices</h2>
+
+<p>To create an invoice the merchant POSTs to /v1/invoice. This is a server-side, authenticated call.</p>
+
+<aside class="notice">
+POST /v1/invoice/ (server-side)
+</aside>
+<pre><code class="highlight shell">curl https://api.yellowpay.co/v1/invoice/
+  -X POST
+  -H <span class="s2">"Content-Type: application/json"</span>
+  -H <span class="s2">"API-Key: Eo2XE5SrHcJVdqK9uIDU"</span>
+  -H <span class="s2">"API-Nonce: 1426625830520"</span>
+  -H <span class="s2">"API-Sign: 4a54add6f67sec8e991dc6433c9e0318fvdf1b2cf02ffca78d14804be6f53dca"</span>
+  -d <span class="s1">'{
+      "base_ccy":"USD",
+      "base_price":"0.05",
+      "callback":"http://yourserver.com/callback-url/"
+      }'</span>
 </code></pre>
-<pre><code class="highlight python"><span class="kn">import</span> <span class="nn">kittn</span>
+<pre><code class="highlight python"><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">yellow</span>
 
-<span class="n">api</span> <span class="o">=</span> <span class="n">kittn</span><span class="o">.</span><span class="n">authorize</span><span class="p">(</span><span class="s">'meowmeowmeow'</span><span class="p">)</span>
+
+<span class="c"># You can get your api key/secret from your merchant dashboard.</span>
+<span class="c"># Store API Key/Secret in environment variable for better security</span>
+<span class="n">api_key</span> <span class="o">=</span> <span class="s">"Eo2XE5SrHcJVdqK9uIDU"</span>
+<span class="n">api_secret</span> <span class="o">=</span> <span class="s">"73jnZflRHpGReqFxzwF_JtynRNmZXoQspPaxTtsy"</span>
+
+<span class="c"># Required: A 3-letter currency code</span>
+<span class="n">base_ccy</span> <span class="o">=</span> <span class="s">"USD"</span>
+
+<span class="c"># Required: The invoice price in the above currency</span>
+<span class="n">base_price</span> <span class="o">=</span> <span class="s">"0.05"</span>
+
+<span class="c"># Optional: URL for Yellow to POST to as a callback</span>
+<span class="n">callback</span> <span class="o">=</span> <span class="s">"http://yourserver.com/callback-url/"</span>
+
+<span class="n">created_invoice</span> <span class="o">=</span> <span class="n">yellow</span><span class="o">.</span><span class="n">create_invoice</span><span class="p">(</span><span class="n">api_key</span><span class="p">,</span> <span class="n">api_secret</span><span class="p">,</span> <span class="n">base_ccy</span><span class="p">,</span> <span class="n">base_price</span><span class="p">,</span> <span class="n">callback</span><span class="p">)</span>
+
+<span class="c"># Print the result beautifully!</span>
+<span class="k">print</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">created_invoice</span><span class="o">.</span><span class="n">json</span><span class="p">(),</span> <span class="n">sort_keys</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+
 </code></pre>
-<pre><code class="highlight shell"><span class="c"># With shell, you can just pass the correct header with each request</span>
-curl <span class="s2">"api_endpoint_here"</span>
-  -H <span class="s2">"Authorization: meowmeowmeow"</span>
+<pre><code class="highlight javascript"><span class="kd">var</span> <span class="nx">yellow</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'yellow-sdk-node'</span><span class="p">);</span>
+
+<span class="c1">// Store your API Key/Secret in environment variable for better security</span>
+<span class="kd">var</span> <span class="nx">api_key</span> <span class="o">=</span> <span class="s1">'Eo2XE5SrHcJVdqK9uIDU'</span><span class="p">,</span>
+    <span class="nx">api_secret</span> <span class="o">=</span> <span class="s1">'73jnZflRHpGReqFxzwF_JtynRNmZXoQspPaxTtsy'</span><span class="p">,</span>
+    <span class="nx">base_ccy</span> <span class="o">=</span> <span class="s1">'USD'</span><span class="p">,</span>
+    <span class="nx">base_price</span> <span class="o">=</span> <span class="s1">'0.05'</span><span class="p">,</span>
+    <span class="nx">callback</span> <span class="o">=</span> <span class="s1">'http://yourserver.com/callback-url/'</span><span class="p">;</span> <span class="c1">// Optional</span>
+
+<span class="nx">yellow</span><span class="p">.</span><span class="nx">createInvoice</span><span class="p">(</span><span class="nx">api_key</span><span class="p">,</span> <span class="nx">api_secret</span><span class="p">,</span> <span class="nx">base_ccy</span><span class="p">,</span> <span class="nx">base_price</span><span class="p">,</span> <span class="nx">callback</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">error</span><span class="p">,</span> <span class="nx">response</span><span class="p">,</span> <span class="nx">body</span><span class="p">){</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">error</span> <span class="o">&amp;&amp;</span> <span class="nx">response</span><span class="p">.</span><span class="nx">statusCode</span> <span class="o">==</span> <span class="mi">200</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="c1">//print the result beautifully</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">body</span><span class="p">,</span> <span class="kc">null</span><span class="p">,</span> <span class="mi">4</span><span class="p">));</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">error</span><span class="p">)</span>
+    <span class="p">}</span>
+
+<span class="p">});</span>
+
 </code></pre>
 
-<blockquote>
-<p>Make sure to replace <code class="prettyprint">meowmeowmeow</code> with your API key.</p>
-</blockquote>
+<h3 id="request-parameters-(json-encoded-body-data)">Request Parameters (JSON encoded body data)</h3>
 
-<p>Kittn uses API keys to allow access to the API. You can register a new Kittn API key at our <a href="http://example.com/developers">developer portal</a>.</p>
-
-<p>Kittn expects for the API key to be included in all API requests to the server in a header that looks like the following:</p>
-
-<p><code class="prettyprint">Authorization: meowmeowmeow</code></p>
-
-<p><aside class="notice">
-You must replace <code class="prettyprint">meowmeowmeow</code> with your personal API key.
-</aside></p>
-<h1 id='kittens'>Kittens</h1><h2 id='get-all-kittens'>Get All Kittens</h2><pre><code class="highlight ruby"><span class="nb">require</span> <span class="s1">'kittn'</span>
-
-<span class="n">api</span> <span class="o">=</span> <span class="no">Kittn</span><span class="o">::</span><span class="no">APIClient</span><span class="p">.</span><span class="nf">authorize!</span><span class="p">(</span><span class="s1">'meowmeowmeow'</span><span class="p">)</span>
-<span class="n">api</span><span class="p">.</span><span class="nf">kittens</span><span class="p">.</span><span class="nf">get</span>
-</code></pre>
-<pre><code class="highlight python"><span class="kn">import</span> <span class="nn">kittn</span>
-
-<span class="n">api</span> <span class="o">=</span> <span class="n">kittn</span><span class="o">.</span><span class="n">authorize</span><span class="p">(</span><span class="s">'meowmeowmeow'</span><span class="p">)</span>
-<span class="n">api</span><span class="o">.</span><span class="n">kittens</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-</code></pre>
-<pre><code class="highlight shell">curl <span class="s2">"http://example.com/api/kittens"</span>
-  -H <span class="s2">"Authorization: meowmeowmeow"</span>
-</code></pre>
-
-<blockquote>
-<p>The above command returns JSON structured like this:</p>
-</blockquote>
-<pre><code class="highlight json"><span class="p">[</span><span class="w">
-  </span><span class="p">{</span><span class="w">
-    </span><span class="s2">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
-    </span><span class="s2">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Fluffums"</span><span class="p">,</span><span class="w">
-    </span><span class="s2">"breed"</span><span class="p">:</span><span class="w"> </span><span class="s2">"calico"</span><span class="p">,</span><span class="w">
-    </span><span class="s2">"fluffiness"</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w">
-    </span><span class="s2">"cuteness"</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="w">
-  </span><span class="p">},</span><span class="w">
-  </span><span class="p">{</span><span class="w">
-    </span><span class="s2">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w">
-    </span><span class="s2">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Isis"</span><span class="p">,</span><span class="w">
-    </span><span class="s2">"breed"</span><span class="p">:</span><span class="w"> </span><span class="s2">"unknown"</span><span class="p">,</span><span class="w">
-    </span><span class="s2">"fluffiness"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w">
-    </span><span class="s2">"cuteness"</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="w">
-  </span><span class="p">}</span><span class="w">
-</span><span class="p">]</span><span class="w">
-</span></code></pre>
-
-<p>This endpoint retrieves all kittens.</p>
-<h3 id='http-request'>HTTP Request</h3>
-<p><code class="prettyprint">GET http://example.com/kittens</code></p>
-<h3 id='query-parameters'>Query Parameters</h3>
 <table><thead>
 <tr>
 <th>Parameter</th>
-<th>Default</th>
+<th>Type</th>
 <th>Description</th>
 </tr>
 </thead><tbody>
 <tr>
-<td>include_cats</td>
-<td>false</td>
-<td>If set to true, the result will also include cats.</td>
+<td>base_ccy</td>
+<td>string</td>
+<td><strong>required</strong> - a 3-letter currency code (e.g. “AED”) representing the national currency used by the merchant.</td>
 </tr>
 <tr>
-<td>available</td>
-<td>true</td>
-<td>If set to false, the result will include kittens that have already been adopted.</td>
+<td>base_price</td>
+<td>string</td>
+<td><strong>required</strong> - The invoice price in the national currency (e.g. “20”)</td>
+</tr>
+<tr>
+<td>callback</td>
+<td>string</td>
+<td><strong>optional</strong> - A URL monitored by the merchant. Yellow will POST invoice status updates to this URL (i.e. Instant Payment Notifications or IPN). The status updates are posted as urlencoded parameters and contains the same fields as the GET query response below.</td>
 </tr>
 </tbody></table>
 
-<p><aside class="success">
-Remember — a happy kitten is an authenticated kitten!
-</aside></p>
-<h2 id='get-a-specific-kitten'>Get a Specific Kitten</h2><pre><code class="highlight ruby"><span class="nb">require</span> <span class="s1">'kittn'</span>
+<aside class="notice">
+NOTE: for now all invoices must be at least $0.05 USD or roughly $0.18 AED
+</aside>
 
-<span class="n">api</span> <span class="o">=</span> <span class="no">Kittn</span><span class="o">::</span><span class="no">APIClient</span><span class="p">.</span><span class="nf">authorize!</span><span class="p">(</span><span class="s1">'meowmeowmeow'</span><span class="p">)</span>
-<span class="n">api</span><span class="p">.</span><span class="nf">kittens</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-</code></pre>
-<pre><code class="highlight python"><span class="kn">import</span> <span class="nn">kittn</span>
+<h3 id="response-parameters-(json-encoded-body-data)">Response Parameters (JSON encoded body data)</h3>
 
-<span class="n">api</span> <span class="o">=</span> <span class="n">kittn</span><span class="o">.</span><span class="n">authorize</span><span class="p">(</span><span class="s">'meowmeowmeow'</span><span class="p">)</span>
-<span class="n">api</span><span class="o">.</span><span class="n">kittens</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-</code></pre>
-<pre><code class="highlight shell">curl <span class="s2">"http://example.com/api/kittens/3"</span>
-  -H <span class="s2">"Authorization: meowmeowmeow"</span>
-</code></pre>
-
-<blockquote>
-<p>The above command returns JSON structured like this:</p>
-</blockquote>
-<pre><code class="highlight json"><span class="p">{</span><span class="w">
-  </span><span class="s2">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w">
-  </span><span class="s2">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Isis"</span><span class="p">,</span><span class="w">
-  </span><span class="s2">"breed"</span><span class="p">:</span><span class="w"> </span><span class="s2">"unknown"</span><span class="p">,</span><span class="w">
-  </span><span class="s2">"fluffiness"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w">
-  </span><span class="s2">"cuteness"</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="w">
-</span><span class="p">}</span><span class="w">
-</span></code></pre>
-
-<p>This endpoint retrieves a specific kitten.</p>
-
-<p><aside class="warning">If you&rsquo;re not using an administrator API key, note that some kittens will return 403 Forbidden if they are hidden for admins only.</aside></p>
-<h3 id='http-request'>HTTP Request</h3>
-<p><code class="prettyprint">GET http://example.com/kittens/&lt;ID&gt;</code></p>
-<h3 id='url-parameters'>URL Parameters</h3>
 <table><thead>
 <tr>
 <th>Parameter</th>
+<th>Type</th>
 <th>Description</th>
 </tr>
 </thead><tbody>
 <tr>
-<td>ID</td>
-<td>The ID of the cat to retrieve</td>
+<td>id</td>
+<td>string</td>
+<td>the invoice ID - this will be used when querying the invoice status</td>
+</tr>
+<tr>
+<td>url</td>
+<td>string</td>
+<td>a URL (hosted on Yellow’s servers) where the invoice can be viewed. This page is designed to be embedded via IFRAME in a merchant shopping cart.</td>
+</tr>
+<tr>
+<td>address</td>
+<td>string</td>
+<td>a unique, one-time-use Bitcoin address. The customer will make payment to this address.</td>
+</tr>
+<tr>
+<td>invoice_ccy</td>
+<td>string</td>
+<td>The currency which the customer will pay in. For now it is always “BTC” invoice_price: The price, in “BTC”, that the customer must pay. This is the BTC equivalent of the provided base_price</td>
+</tr>
+<tr>
+<td>base_ccy</td>
+<td>string</td>
+<td>a 3-letter currency code (e.g. “AED”) representing the national currency used by the merchant. (This will be the same value that was POSTed when creating the invoice)</td>
+</tr>
+<tr>
+<td>base_price</td>
+<td>string</td>
+<td>The invoice price in the national currency (e.g. “20”). (This will be the same value that was POSTed when creating the invoice)</td>
+</tr>
+<tr>
+<td>server_time</td>
+<td>string</td>
+<td>current time (in UTC) on the server</td>
+</tr>
+<tr>
+<td>expiration</td>
+<td>string</td>
+<td>time (in UTC) when the invoice expires and is no longer valid (roughly 10 minutes after invoice is created)</td>
 </tr>
 </tbody></table>
 
-          <h1 id='errors'>Errors</h1>
-<p><aside class="notice">This error section is stored in a separate file in <code class="prettyprint">includes/_errors.md</code>. Slate allows you to optionally separate out your docs into many files&hellip;just save them to the <code class="prettyprint">includes</code> folder and add them to the top of your <code class="prettyprint">index.md</code>&rsquo;s frontmatter. Files are included in the order listed.</aside></p>
+<h2 id="querying-invoices">Querying Invoices</h2>
 
-<p>The Kittn API uses the following error codes:</p>
+<p>To query the status of an invoice the merchant GETs /v1/invoice/[id]/ where [id] is the invoice ID returned when creating the invoice.</p>
+
+<aside class="notice">
+GET /v1/invoice/[id]/
+</aside>
+<pre><code class="highlight shell">curl https://api.yellowpay.co/v1/invoice/a7dfbfbf69b7b0sacb2dadw5e7437754/
+  -X GET
+  -H <span class="s2">"API-Key: Eo2XE5SrHcJVdqK9uIDU"</span>
+  -H <span class="s2">"API-Nonce: 1426625830520"</span>
+  -H <span class="s2">"API-Sign: 4a54add6f67sec8e991dc6433c9e0318fvdf1b2cf02ffca78d14804be6f53dca"</span>
+</code></pre>
+<pre><code class="highlight python"><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">yellow</span>
+
+
+<span class="c"># You can get your api key/secret from your merchant dashboard.</span>
+<span class="c"># Store API Key/Secret in environment variable for better security</span>
+<span class="n">api_key</span> <span class="o">=</span> <span class="s">"Eo2XE5SrHcJVdqK9uIDU"</span>
+<span class="n">api_secret</span> <span class="o">=</span> <span class="s">"73jnZflRHpGReqFxzwF_JtynRNmZXoQspPaxTtsy"</span>
+
+<span class="c"># invoice ID you received when you created the invoice.</span>
+<span class="n">invoice_id</span> <span class="o">=</span> <span class="s">"a7dfbfbf69b7b0sacb2dadw5e7437754"</span>
+
+<span class="n">invoice</span> <span class="o">=</span> <span class="n">yellow</span><span class="o">.</span><span class="n">query_invoice</span><span class="p">(</span><span class="n">api_key</span><span class="p">,</span> <span class="n">api_secret</span><span class="p">,</span> <span class="n">invoice_id</span><span class="p">)</span>
+
+<span class="c"># Print the result beautifully!</span>
+<span class="k">print</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">invoice</span><span class="o">.</span><span class="n">json</span><span class="p">(),</span> <span class="n">sort_keys</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+</code></pre>
+<pre><code class="highlight javascript"><span class="kd">var</span> <span class="nx">yellow</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'yellow-sdk-node'</span><span class="p">);</span>
+
+<span class="c1">// Store your API Key/Secret in environment variable for better security</span>
+<span class="kd">var</span> <span class="nx">api_key</span> <span class="o">=</span> <span class="s1">'Eo2XE5SrHcJVdqK9uIDU'</span><span class="p">;</span>
+<span class="kd">var</span> <span class="nx">api_secret</span> <span class="o">=</span> <span class="s1">'73jnZflRHpGReqFxzwF_JtynRNmZXoQspPaxTtsy'</span><span class="p">;</span>
+
+<span class="c1">// Invoice ID you got when you first created the invoice</span>
+<span class="kd">var</span> <span class="nx">invoice_id</span> <span class="o">=</span> <span class="s1">'a7dfbfbf69b7b0sacb2dadw5e7437754'</span><span class="p">;</span>
+
+<span class="nx">yellow</span><span class="p">.</span><span class="nx">queryInvoice</span><span class="p">(</span><span class="nx">api_key</span><span class="p">,</span> <span class="nx">api_secret</span><span class="p">,</span> <span class="nx">invoice_id</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">error</span><span class="p">,</span> <span class="nx">response</span><span class="p">,</span> <span class="nx">body</span><span class="p">){</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">error</span> <span class="o">&amp;&amp;</span> <span class="nx">response</span><span class="p">.</span><span class="nx">statusCode</span> <span class="o">==</span> <span class="mi">200</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c1">//print the result beautifully</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">body</span><span class="p">,</span> <span class="kc">null</span><span class="p">,</span> <span class="mi">4</span><span class="p">));</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">error</span><span class="p">)</span>
+    <span class="p">}</span>
+
+<span class="p">});</span>
+</code></pre>
+
+<h3 id="response-parameters-(json-encoded-body-data)">Response Parameters (JSON encoded body data)</h3>
 
 <table><thead>
 <tr>
-<th>Error Code</th>
-<th>Meaning</th>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
 </tr>
 </thead><tbody>
 <tr>
-<td>400</td>
-<td>Bad Request &ndash; Your request sucks</td>
+<td>id</td>
+<td>string</td>
+<td>the invoice ID - this will be used when querying the invoice status</td>
 </tr>
 <tr>
-<td>401</td>
-<td>Unauthorized &ndash; Your API key is wrong</td>
+<td>url</td>
+<td>string</td>
+<td>a URL (hosted on Yellow’s servers) where the invoice can be viewed. This page is designed to be embedded via IFRAME in a merchant shopping cart.</td>
 </tr>
 <tr>
-<td>403</td>
-<td>Forbidden &ndash; The kitten requested is hidden for administrators only</td>
+<td>address</td>
+<td>string</td>
+<td>a unique, one-time-use Bitcoin address. The customer will make payment to this address.</td>
 </tr>
 <tr>
-<td>404</td>
-<td>Not Found &ndash; The specified kitten could not be found</td>
+<td>invoice_ccy</td>
+<td>string</td>
+<td>The currency which the customer will pay in. For now it is always “BTC” invoice_price: The price, in “BTC”, that the customer must pay. This is the BTC equivalent of the provided base_price</td>
 </tr>
 <tr>
-<td>405</td>
-<td>Method Not Allowed &ndash; You tried to access a kitten with an invalid method</td>
+<td>base_ccy</td>
+<td>string</td>
+<td>a 3-letter currency code (e.g. “AED”) representing the national currency used by the merchant. (This will be the same value that was POSTed when creating the invoice)</td>
 </tr>
 <tr>
-<td>406</td>
-<td>Not Acceptable &ndash; You requested a format that isn&rsquo;t json</td>
+<td>base_price</td>
+<td>string</td>
+<td>The invoice price in the national currency (e.g. “20”). (This will be the same value that was POSTed when creating the invoice)</td>
 </tr>
 <tr>
-<td>410</td>
-<td>Gone &ndash; The kitten requested has been removed from our servers</td>
+<td>server_time</td>
+<td>string</td>
+<td>current time (in UTC) on the server</td>
 </tr>
 <tr>
-<td>418</td>
-<td>I&rsquo;m a teapot</td>
-</tr>
-<tr>
-<td>429</td>
-<td>Too Many Requests &ndash; You&rsquo;re requesting too many kittens! Slown down!</td>
-</tr>
-<tr>
-<td>500</td>
-<td>Internal Server Error &ndash; We had a problem with our server. Try again later.</td>
-</tr>
-<tr>
-<td>503</td>
-<td>Service Unavailable &ndash; We&rsquo;re temporarially offline for maintanance. Please try again later.</td>
+<td>expiration</td>
+<td>string</td>
+<td>time (in UTC) when the invoice expires and is no longer valid (roughly 10 minutes after invoice is created)</td>
 </tr>
 </tbody></table>
+
+<h2 id="instant-payment-notifications-(ipn)">Instant Payment Notifications (IPN)</h2>
+
+<p>Whenever an invoice status changes the Yellow server will POST to the provided IPN URL. The payload of the POST request will contain the same information (JSON-encoded) as the GET  response of querying an invoice. Namely:</p>
+<pre><code class="highlight shell">Verifying IPN is a helper <span class="k">function</span>. Not available <span class="k">for </span>curl.
+Please choose a language from the tab above.
+</code></pre>
+<pre><code class="highlight python"><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">yellow</span>
+
+<span class="n">api_secret</span> <span class="o">=</span> <span class="s">"73jnZflRHpGReqFxzwF_JtynRNmZXoQspPaxTtsy"</span>
+
+<span class="c"># The URL you set as a "callback" when you created the invoice</span>
+<span class="n">host_url</span> <span class="o">=</span> <span class="s">"http://yourserver.com/callback-url/"</span>
+
+<span class="c"># Returns a boolean.</span>
+<span class="n">is_verified</span> <span class="o">=</span> <span class="n">yellow</span><span class="o">.</span><span class="n">verify_ipn</span><span class="p">(</span><span class="n">api_secret</span><span class="p">,</span> <span class="n">host_url</span><span class="p">,</span> <span class="n">request</span><span class="p">)</span>
+</code></pre>
+<pre><code class="highlight javascript"><span class="kd">var</span> <span class="nx">yellow</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'yellow-sdk-node'</span><span class="p">);</span>
+
+<span class="kd">var</span> <span class="nx">api_secret</span> <span class="o">=</span> <span class="s2">"73jnZflRHpGReqFxzwF_JtynRNmZXoQspPaxTtsy"</span>
+
+<span class="c1">// The URL you set as a "callback" when you created the invoice</span>
+<span class="kd">var</span> <span class="nx">host_url</span> <span class="o">=</span> <span class="s2">"http://yourserver.com/callback-url/"</span>
+
+<span class="c1">// Returns a boolean.</span>
+<span class="nx">isVerified</span> <span class="o">=</span> <span class="nx">yellow</span><span class="p">.</span><span class="nx">verifyIPN</span><span class="p">(</span><span class="nx">api_secret</span><span class="p">,</span> <span class="nx">host_url</span><span class="p">,</span> <span class="nx">request</span><span class="p">)</span>
+</code></pre>
+
+<table><thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>id</td>
+<td>string</td>
+<td>the invoice ID - this will be used when querying the invoice status</td>
+</tr>
+<tr>
+<td>url</td>
+<td>string</td>
+<td>a URL (hosted on Yellow’s servers) where the invoice can be viewed. This page is designed to be embedded via IFRAME in a merchant shopping cart.</td>
+</tr>
+<tr>
+<td>address</td>
+<td>string</td>
+<td>a unique, one-time-use Bitcoin address. The customer will make payment to this address.</td>
+</tr>
+<tr>
+<td>invoice_ccy</td>
+<td>string</td>
+<td>The currency which the customer will pay in. For now it is always “BTC” invoice_price: The price, in “BTC”, that the customer must pay. This is the BTC equivalent of the provided base_price</td>
+</tr>
+<tr>
+<td>base_ccy</td>
+<td>string</td>
+<td>a 3-letter currency code (e.g. “AED”) representing the national currency used by the merchant. (This will be the same value that was POSTed when creating the invoice)</td>
+</tr>
+<tr>
+<td>base_price</td>
+<td>string</td>
+<td>The invoice price in the national currency (e.g. “20”). (This will be the same value that was POSTed when creating the invoice)</td>
+</tr>
+<tr>
+<td>server_time</td>
+<td>string</td>
+<td>current time (in UTC) on the server</td>
+</tr>
+<tr>
+<td>expiration</td>
+<td>string</td>
+<td>time (in UTC) when the invoice expires and is no longer valid (roughly 10 minutes after invoice is created)</td>
+</tr>
+</tbody></table>
+
+<p>All IPN requests are authenticated as described above, the merchant should verify the signature to ensure the IPN came from Yellow. You&rsquo;ll find examples on the right, but remember that the <code class="prettyprint">verify_ipn</code> function works within the context of a web app (since it expects a request parameter). We have example demos in your favorite language to make it all clear for you.</p>
+
+<p>Once you have received and processed the IPN, Yellow expects a 200 response. If Yellow doesn’t see a 200 response it will try the IPN again. Yellow will retry 10 times at a gradually reduced frequency.</p>
+
+<h2 id="javascript-postmessage">JavaScript postMessage</h2>
+
+<p>In addition to the redirect URL, the widget can communicate with the merchant webpage via postMessage (a cross-domain compatible way to communicate - more info <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage">here</a>). When payment is detected the widget will issue a postMessage to the parent page. See an example in the code area on the right.</p>
+<pre><code class="highlight javascript"><span class="kd">function</span> <span class="nx">invoiceListener</span><span class="p">(</span><span class="nx">event</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c1">// For additional security, confirm the message originated from the</span>
+        <span class="c1">// embedded invoice</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="sr">/</span><span class="se">\.</span><span class="sr">yellowpay</span><span class="se">\.</span><span class="sr">co$/</span><span class="p">.</span><span class="nx">test</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">origin</span><span class="p">))</span> <span class="p">{</span>
+          <span class="nx">alert</span><span class="p">(</span><span class="s2">"Received message from unexpected domain: "</span> <span class="o">+</span> <span class="nx">event</span><span class="p">.</span><span class="nx">origin</span><span class="p">);</span>
+          <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="c1">// Handle the invoice status update</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">data</span><span class="p">);</span>
+      <span class="p">}</span>
+      <span class="c1">// Attach the message listener</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nb">window</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">addEventListener</span><span class="p">(</span><span class="s2">"message"</span><span class="p">,</span> <span class="nx">invoiceListener</span><span class="p">,</span> <span class="kc">false</span><span class="p">)</span>
+      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">attachEvent</span><span class="p">(</span><span class="s2">"onmessage"</span><span class="p">,</span> <span class="nx">invoiceListener</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre>
+
+<h1 id="note-on-invoice-status">Note on Invoice Status</h1>
+
+<p>After the customer sends a payment it passes through two states: <strong>authorizing</strong> and <strong>paid</strong>. Authorizing means that we have detected the payment and it is in the process of being verified by the Bitcoin network. We will mark an invoice <strong>paid</strong> once we’ve been able to authenticate the payment.</p>
+
+<p>We can usually detect an <strong>authorizing</strong> payment within seconds, however it can take anywhere from 5-40 minutes to authenticate the payment and mark the invoice <strong>paid</strong>. Shipping product before a payment has been authenticated carries minimal risk. However, it is theoretically possible that the payment will turn out to be fraudulent (an authorized payment that is never authenticated), in which case Yellow will not be able to settle payment to the merchant. This can be considered similar to when a customer pays for product with a credit card and then issues a card-not-present chargeback.</p>
+
+<p>The risk of such &ldquo;Bitcoin chargeback&rdquo; is quite low, especially for small purchases (technically, this requires the user to have a very large amount of computing power directed at the Bitcoin network to perform a malicious transaction). Therefore, we recommend merchants allow a customer to complete the checkout process as soon as the invoice is marked <strong>authorizing</strong>. However, for risk mitigation, we suggest that the shipping of any high-priced products be delayed until the invoice is marked <strong>paid</strong> (i.e. we suggest waiting at least 5-40 minutes before shipping the product).</p>
 
       </div>
       <div class="dark-box">
           <div class="lang-selector">
-                <a href="#" data-language-name="shell">shell</a>
-                <a href="#" data-language-name="ruby">ruby</a>
-                <a href="#" data-language-name="python">python</a>
+                <a href="#" data-language-name="shell">curl</a>
+                <a href="#" data-language-name="python">Python</a>
+                <a href="#" data-language-name="javascript">Node/JS</a>
           </div>
       </div>
     </div>
