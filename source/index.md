@@ -4,7 +4,7 @@ title: Yellow API Reference
 language_tabs:
   - shell: curl
   - python: Python
-  - javascript: Node
+  - javascript: Node/JS
 
 
 toc_footers:
@@ -13,7 +13,7 @@ toc_footers:
 search: true
 ---
 # Introduction
-Welcome to Yellow! We're here to take the pain out of integrating bitcoin into your web applications. This documentation will give you all the information you need to get set up with whatever language you're comfortable with, or even better, through raw HTTP.
+Welcome to Yellow! We're here to take the pain out of integrating bitcoin into your web & mobile applications. This documentation will give you all the information you need to get set up with whatever language you're comfortable with, or even better, through raw HTTP.
 
 If you ever need any help, feel free to contact us at support@yellowpay.co
 
@@ -61,16 +61,12 @@ There are two steps in integrating the Yellow API (corresponding to steps #2 and
 
 
 ## Server Root
-Most of the time, there is no difference between production and staging servers. When implementing the Yellow payment integration for the first time, you may do so on the production server. Once you have your feature released to customers, any changes to the Yellow API will be released first to Staging to give our customers the opportunity to test changes before releasing to production.
-
+Direct all your API calls to our production server at:
 
 <aside class="notice">
 Production: https://api.yellowpay.co
 </aside>
 
-<aside class="notice">
-Staging: https://api-stage.yellowpay.co
-</aside>
 
 ## Creating Invoices
 To create an invoice the merchant POSTs to /v1/invoice. This is a server-side, authenticated call.
@@ -83,9 +79,9 @@ POST /v1/invoice/ (server-side)
 curl https://api.yellowpay.co/v1/invoice/
   -X POST
   -H "Content-Type: application/json"
-  -H "API-Key: ..."
-  -H "API-Nonce: ..."
-  -H "API-Sign: ..."
+  -H "API-Key: Eo2XE5SrHcJVdqK9uIDU"
+  -H "API-Nonce: 1426625830520"
+  -H "API-Sign: 4a54add6f67sec8e991dc6433c9e0318fvdf1b2cf02ffca78d14804be6f53dca"
   -d '{
       "base_ccy":"USD",
       "base_price":"0.05",
@@ -100,8 +96,8 @@ import yellow
 
 # You can get your api key/secret from your merchant dashboard.
 # Store API Key/Secret in environment variable for better security
-api_key = "YOUR_API_KEY"
-api_secret = "YOUR_API_SECRET"
+api_key = "Eo2XE5SrHcJVdqK9uIDU"
+api_secret = "73jnZflRHpGReqFxzwF_JtynRNmZXoQspPaxTtsy"
 
 # Required: A 3-letter currency code
 base_ccy = "USD"
@@ -110,7 +106,7 @@ base_ccy = "USD"
 base_price = "0.05"
 
 # Optional: URL for Yellow to POST to as a callback
-callback = "https://example.com"
+callback = "http://yourserver.com/callback-url/"
 
 created_invoice = yellow.create_invoice(api_key, api_secret, base_ccy, base_price, callback)
 
@@ -124,11 +120,11 @@ print json.dumps(created_invoice.json(), sort_keys=True, indent=4)
 var yellow = require('yellow-sdk-node');
 
 // Store your API Key/Secret in environment variable for better security
-var api_key = 'YOUR_API_KEY',
-    api_secret = 'YOUR_API_SECRET',
+var api_key = 'Eo2XE5SrHcJVdqK9uIDU',
+    api_secret = '73jnZflRHpGReqFxzwF_JtynRNmZXoQspPaxTtsy',
     base_ccy = 'USD',
     base_price = '0.05',
-    callback = 'https://example.com'; // Optional
+    callback = 'http://yourserver.com/callback-url/'; // Optional
 
 yellow.createInvoice(api_key, api_secret, base_ccy, base_price, callback, function(error, response, body){
     if (!error && response.statusCode == 200) {
@@ -175,11 +171,11 @@ GET /v1/invoice/[id]/
 </aside>
 
 ```shell
-curl https://api.yellowpay.co/v1/invoice/:id/
+curl https://api.yellowpay.co/v1/invoice/a7dfbfbf69b7b0sacb2dadw5e7437754/
   -X GET
-  -H "API-Key: ..."
-  -H "API-Nonce: ..."
-  -H "API-Sign: ..."
+  -H "API-Key: Eo2XE5SrHcJVdqK9uIDU"
+  -H "API-Nonce: 1426625830520"
+  -H "API-Sign: 4a54add6f67sec8e991dc6433c9e0318fvdf1b2cf02ffca78d14804be6f53dca"
 ```
 
 ```python
@@ -189,11 +185,11 @@ import yellow
 
 # You can get your api key/secret from your merchant dashboard.
 # Store API Key/Secret in environment variable for better security
-api_key = "YOUR_API_KEY"
-api_secret = "YOUR_API_SECRET"
+api_key = "Eo2XE5SrHcJVdqK9uIDU"
+api_secret = "73jnZflRHpGReqFxzwF_JtynRNmZXoQspPaxTtsy"
 
 # invoice ID you received when you created the invoice.
-invoice_id = "..."
+invoice_id = "a7dfbfbf69b7b0sacb2dadw5e7437754"
 
 invoice = yellow.query_invoice(api_key, api_secret, invoice_id)
 
@@ -205,11 +201,11 @@ print json.dumps(invoice.json(), sort_keys=True, indent=4)
 var yellow = require('yellow-sdk-node');
 
 // Store your API Key/Secret in environment variable for better security
-var api_key = 'YOUR_API_KEY';
-var api_secret = 'YOUR_API_SECRET';
+var api_key = 'Eo2XE5SrHcJVdqK9uIDU';
+var api_secret = '73jnZflRHpGReqFxzwF_JtynRNmZXoQspPaxTtsy';
 
 // Invoice ID you got when you first created the invoice
-var invoice_id = '...';
+var invoice_id = 'a7dfbfbf69b7b0sacb2dadw5e7437754';
 
 yellow.queryInvoice(api_key, api_secret, invoice_id, function(error, response, body){
     if (!error && response.statusCode == 200) {
@@ -247,10 +243,10 @@ Please choose a language from the tab above.
 import json
 import yellow
 
-api_secret = "YOUR_API_SECRET"
+api_secret = "73jnZflRHpGReqFxzwF_JtynRNmZXoQspPaxTtsy"
 
 # The URL you set as a "callback" when you created the invoice
-host_url = "https://example.com"
+host_url = "http://yourserver.com/callback-url/"
 
 # Returns a boolean.
 is_verified = yellow.verify_ipn(api_secret, host_url, request)
@@ -259,10 +255,10 @@ is_verified = yellow.verify_ipn(api_secret, host_url, request)
 ```javascript
 var yellow = require('yellow-sdk-node');
 
-var api_secret = "YOUR_API_SECRET"
+var api_secret = "73jnZflRHpGReqFxzwF_JtynRNmZXoQspPaxTtsy"
 
 // The URL you set as a "callback" when you created the invoice
-var host_url = "https://example.com"
+var host_url = "http://yourserver.com/callback-url/"
 
 // Returns a boolean.
 isVerified = yellow.verifyIPN(api_secret, host_url, request)
