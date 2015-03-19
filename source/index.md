@@ -13,7 +13,7 @@ toc_footers:
 search: true
 ---
 # Introduction
-Welcome to YellowPay! We're here to take the pain out of integrating bitcoin into your web & mobile applications. This documentation will give you all the information you need to get set up with whatever language you're comfortable with, or even better, through raw HTTP.
+Welcome to Yellow! We're here to take the pain out of integrating bitcoin into your web & mobile applications. This documentation will give you all the information you need to get set up with whatever language you're comfortable with, or even better, through raw HTTP.
 
 If you ever need any help, feel free to contact us at support@yellowpay.co
 
