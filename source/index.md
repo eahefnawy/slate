@@ -21,11 +21,11 @@ If you ever need any help, feel free to contact us at support@yellowpay.co
 
 There are 5 steps in a Bitcoin payment:
 
-1. The **customer** completes their shopping cart on the **merchant**’s site and proceeds to check out
-2. **Yellow** generates a unique, one-time-use Bitcoin address to accept payment which is then displayed on the **merchant**’s site. The address is displayed both in text and QR-code form.
+1. The **customer** completes their order on the **merchant**’s site or app and proceeds to check out
+2. **Yellow** generates a unique, one-time-use Bitcoin address to accept payment which is then displayed on the **merchant**’s page. The address is displayed both in text and QR-code form.
 3. **The customer** sends payment (in Bitcoin) to the Bitcoin address, using either:
     * Their smartphone Bitcoin wallet to scan the QR-code, or
-    * A web based Bitcoin wallet (e.g., blockchain.info)
+    * A web or desktop based Bitcoin wallet
 4. Bitcon payment is received and **the customer** is redirected to an order confirmation page on **the merchant’s** site
 5. **Yellow** converts the received Bitcoin payment into a national currency (like AED) and transfers it to **the merchant’s** bank account
 
@@ -36,22 +36,22 @@ For more information on the Bitcoin technology, please see [shubitcoin.com](http
 ## Adding Bitcoin to a Shopping Cart
 There are three ways to integrate Yellow Bitcoin payments with a shopping cart:
 
-1. By using a plugin to one of our supported ecommerce platforms like Magento
+1. By using a plugin to one of our supported ecommerce platforms (e.g., Magento, Drupal, ShopGo)
 2. By using one of our SDKs (PHP, Python, Ruby & Node.js)
-3. By accessing our API directly from the merchant site
+3. By accessing our API directly
 
 # Authentication
 All API requests must be authenticated with the merchant’s private key. To secure communication between merchant server and Yellow server we use a form of [HMAC authentication](http://en.wikipedia.org/wiki/Hash-based_message_authentication_code).
 
-When submitting a request to Yellow 3 additional header elements are needed:
+When submitting a request to Yellow, 3 additional header elements are needed:
 
 * **API-Key:** your public API key, you can get this from your merchant dashboard
 * **API-Nonce:** an ever-increasing number that is different for each request (e.g., current UNIX time in milliseconds)
 * **API-Sign:** an HMAC hash (using SHA256) signed with your API secret and converted to hexadecimal. The message to be hashed and signed is the concatenation of the nonce, fully-qualified request URL, and the json encoded POST data (for GET requests, the “POST data” is an empty string).
 
-This approach allows us to authenticate the request as coming from the merchant, prevents anyone else from modifying or replaying the request, and ensures the secret key is never exposed (even in a Heartbleed-type scenario where the SSL layer itself is compromised).
+This approach allows us to authenticate the request as coming from the merchant, and prevents anyone else from modifying or replaying the request. It also ensures the secret key is never exposed (even in a Heartbleed-type scenario where the SSL layer itself is compromised).
 
-If you need a more concrete example in your favorite language, feel free to check out the source code of one of our SDKs. However, if you don't wanna worry about authentication, you could just use one of our SDKs directly.
+If you need a more concrete example in your favorite language, you can check out the source code of one of our SDKs. However, if you'd rather not worry about authentication, we recommend you use one of our SDKs directly.
 
 # The Yellow API
 There are two steps in integrating the Yellow API (corresponding to steps #2 and #4 in the Bitcoin payments walkthrough above)
